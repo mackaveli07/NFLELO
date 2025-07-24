@@ -10,7 +10,6 @@ def predict_win_prob(home_elo, away_elo):
     return 1 / (1 + 10 ** ((away_elo - home_elo) / 400))
 
 def find_next_upcoming_week_for_forced_year(year):
-    # Check weeks 1 to 18 for upcoming games on ESPN for the forced year only
     for week in range(1, 19):
         url = f"https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week={week}&year={year}&seasontype=2"
         resp = requests.get(url)
@@ -66,6 +65,7 @@ def predict_upcoming_games():
         away_elo = elos.get(away, 1500)
         home_win_prob = predict_win_prob(home_elo, away_elo)
         predictions.append({
+            'season': year,
             'week': week,
             'date': row['date'],
             'home_team': home,
@@ -77,7 +77,10 @@ def predict_upcoming_games():
             'predicted_winner': home if home_win_prob > 0.5 else away
         })
     pred_df = pd.DataFrame(predictions)
-    pred_df.to_csv(f"nfl_elo_predictions_week{week}.csv", index=False)
+
+    # 💾 Save to Excel, overwriting previous predictions
+    pred_df.to_excel("nfl_elo_predictions.xlsx", index=False)
+    print("✅ Predictions saved to nfl_elo_predictions.xlsx")
     print(pred_df[['home_team', 'away_team', 'home_win_prob', 'away_win_prob', 'predicted_winner']])
 
 if __name__ == "__main__":
