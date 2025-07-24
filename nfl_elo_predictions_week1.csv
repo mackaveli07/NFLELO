@@ -1,0 +1,3 @@
+week,date,home_team,away_team,home_elo,away_elo,home_win_prob,away_win_prob,predicted_winner
+1,2024-09-15T13:00Z,Chiefs,Bills,1580,1550,0.55,0.45,Chiefs
+1,2024-09-15T16:25Z,Raiders,Dolphins,1495,1500,0.48,0.52,Dolphins
