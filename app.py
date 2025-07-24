@@ -15,7 +15,7 @@ def load_elo_data():
 def load_predictions():
     import glob
     import os
-    files = glob.glob("nfl_elo_predictions_week*.csv")
+    files = glob.glob("nfl_elo_predictions.xlsx")
     if not files:
         return pd.DataFrame()
     latest_file = max(files, key=os.path.getctime)
