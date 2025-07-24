@@ -3,29 +3,31 @@ import pandas as pd
 
 HOME_ADVANTAGE = 65
 ELO_FILE = "nfl_team_elo_final.csv"
-FORCED_YEAR = 2025  # Force 2025 season
+FORCED_YEAR = 2025  # Explicitly use 2025
+SEASON_TYPE = 2     # 2 = regular season
 
 def predict_win_prob(home_elo, away_elo):
     home_elo += HOME_ADVANTAGE
     return 1 / (1 + 10 ** ((away_elo - home_elo) / 400))
 
-def find_next_upcoming_week_for_forced_year(year):
-    for week in range(1, 19):
-        url = f"https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week={week}&year={year}&seasontype=2"
+def find_first_valid_week(year):
+    for week in range(1, 19):  # Regular season weeks 1-18
+        url = f"https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week={week}&year={year}&seasontype={SEASON_TYPE}"
         resp = requests.get(url)
         if resp.status_code != 200:
             continue
         data = resp.json()
         events = data.get("events", [])
-        if events:
-            for event in events:
-                status = event.get("status", {}).get("type", {}).get("state", "")
-                if status in ("pre", "in"):
-                    return week
+        if not events:
+            continue
+        for event in events:
+            state = event.get("status", {}).get("type", {}).get("state", "")
+            if state == "pre":  # Game hasn't started yet
+                return week
     return None
 
 def get_week_schedule(week, year):
-    url = f"https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week={week}&year={year}&seasontype=2"
+    url = f"https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week={week}&year={year}&seasontype={SEASON_TYPE}"
     resp = requests.get(url)
     if resp.status_code != 200:
         return pd.DataFrame()
@@ -46,15 +48,16 @@ def get_week_schedule(week, year):
 def predict_upcoming_games():
     elos = pd.read_csv(ELO_FILE).set_index('Unnamed: 0')['elo'].to_dict()
     year = FORCED_YEAR
-    week = find_next_upcoming_week_for_forced_year(year)
+    week = find_first_valid_week(year)
     if not week:
-        print(f"No upcoming games found for season {year}.")
+        print(f"No upcoming *regular season* games found for {year}.")
         return
-    print(f"Next upcoming NFL week is Week {week} of {year}.")
+
+    print(f"📅 Predicting Week {week} of {year} regular season...")
 
     schedule_df = get_week_schedule(week, year)
     if schedule_df.empty:
-        print(f"No games scheduled for Week {week} of {year}.")
+        print("No games scheduled.")
         return
 
     predictions = []
@@ -76,11 +79,10 @@ def predict_upcoming_games():
             'away_win_prob': round(1 - home_win_prob, 3),
             'predicted_winner': home if home_win_prob > 0.5 else away
         })
-    pred_df = pd.DataFrame(predictions)
 
-    # 💾 Save to Excel, overwriting previous predictions
-    pred_df.to_excel("nfl_elo_predictions_week1.csv", index=False)
-    print("✅ Predictions saved tonfl_elo_predictions.xlsx")
+    pred_df = pd.DataFrame(predictions)
+    pred_df.to_excel("nfl_elo_predictions.xlsx", index=False)
+    print("✅ Saved to nfl_elo_predictions.xlsx")
     print(pred_df[['home_team', 'away_team', 'home_win_prob', 'away_win_prob', 'predicted_winner']])
 
 if __name__ == "__main__":
