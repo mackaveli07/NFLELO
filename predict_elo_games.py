@@ -81,8 +81,8 @@ def predict_upcoming_games():
         })
 
     pred_df = pd.DataFrame(predictions)
-    pred_df.to_excel("nfl_elo_predictions_week1.csv", index=False)
-    print("✅ Saved to nfl_elo_predictions_week1.csv")
+    pred_df.to_excel("nfl_elo_predictions.csv", index=False)
+    print("✅ Saved to nfl_elo_predictions.csv")
     print(pred_df[['home_team', 'away_team', 'home_win_prob', 'away_win_prob', 'predicted_winner']])
 
 if __name__ == "__main__":
